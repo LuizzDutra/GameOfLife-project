@@ -19,7 +19,7 @@ camera_pos = [0, 0]
 TICK_TIME = 0.1
 game_state = False
 
-CELL_SIZE = (16, 16)
+cell_size = (16, 16)
 args = sys.argv
 if len(args) > 1:
     for i in range(len(sys.argv)):
@@ -32,11 +32,11 @@ if len(args) > 1:
                     raise
             if args[i] == '-p':
                 try:
-                    CELL_SIZE = (int(args[i+1]), int(args[i+2]))
+                    cell_size = (int(args[i+1]), int(args[i+2]))
                 except:
                     print("Could not recognize arguments of '-p'")
                     raise
-cell_image = pg.Surface(CELL_SIZE)
+cell_image = pg.Surface(cell_size)
 cell_image.fill((255,255,255))     
 
 
@@ -51,9 +51,15 @@ class InputHandler():
         self.MOUSE_DRAG_TIME = 0.15
         self.space_up_switch = True
         self.mouse_mov_buff = (0, 0)
+        self.mouse_up_scroll = False
+        self.mouse_down_scroll = False
 
     def handle_key_input(self, events: list):
         global game_state
+        global cell_size
+        global cell_image
+        self.mouse_up_scroll = False
+        self.mouse_down_scroll = False
         for event in events:
             #checks quit event for proper exit
             if event.type == pg.QUIT:
@@ -65,6 +71,17 @@ class InputHandler():
 
             if event.type == pg.KEYUP and event.key == pg.K_SPACE:
                 self.space_up_switch = True
+            
+            #detect mouse scroll and changes zoom level
+            if event.type == pg.MOUSEWHEEL:
+                new_cell_size = (cell_size[0] + event.y*2, cell_size[1] + event.y*2) 
+                if new_cell_size[0] <= 0 or new_cell_size[1] <= 0:
+                    new_cell_size = cell_size
+
+                cell_size = new_cell_size
+                #cell_image
+                cell_image = pg.Surface(cell_size)
+                cell_image.fill((255,255,255))     
 
     def handle_mouse_input(self, mouse_mov: tuple, mouse_events: tuple):
         self.mouse_mov_buff = mouse_mov
@@ -87,12 +104,13 @@ class InputHandler():
                 self.prev_mouse_click = True
 
 
+
 def cell_draw(coord_list):
     SCREEN.fill((60,60,60))
     global cell_image
     global camera_pos
     for coord in coord_list:
-        SCREEN.blit(cell_image, (coord[0]*CELL_SIZE[0] - camera_pos[0], coord[1]*CELL_SIZE[1] - camera_pos[1]))
+        SCREEN.blit(cell_image, (coord[0]*cell_size[0] - camera_pos[0], coord[1]*cell_size[1] - camera_pos[1]))
     pg.display.update()
 
 def game_cycle(coord_list: list) -> list:
@@ -126,7 +144,7 @@ def game_cycle(coord_list: list) -> list:
 def game_loop(coord_list):
     global camera_pos
     global game_state
-    global CELL_SIZE
+    global cell_size
     last_update = 0
     input_handler = InputHandler()
 
@@ -145,8 +163,8 @@ def game_loop(coord_list):
             #gets the alive coords doing a tick of life
             coord_list = game_cycle(coord_list)
         elif not game_state and input_handler.mouse_click:
-            new_cell_coord = [(pg.mouse.get_pos()[0] + camera_pos[0])//CELL_SIZE[0], 
-                                (pg.mouse.get_pos()[1] + camera_pos[1])//CELL_SIZE[1]]
+            new_cell_coord = [(pg.mouse.get_pos()[0] + camera_pos[0])//cell_size[0], 
+                                (pg.mouse.get_pos()[1] + camera_pos[1])//cell_size[1]]
             if new_cell_coord in coord_list:
                 coord_list.remove(new_cell_coord)
             else:
