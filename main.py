@@ -23,7 +23,7 @@ CELL_SIZE = (16, 16)
 args = sys.argv
 if len(args) > 1:
     for i in range(len(sys.argv)):
-        if type(args[i]).isinstance(str) and len(args[1]) > 0 and args[i][0] == '-':
+        if type(args[i]) is str and len(args[1]) > 0 and args[i][0] == '-':
             if args[i] == '-t':
                 try:
                     TICK_TIME = float(args[i+1])
