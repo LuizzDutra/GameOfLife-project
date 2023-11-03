@@ -51,15 +51,11 @@ class InputHandler():
         self.MOUSE_DRAG_TIME = 0.15
         self.space_up_switch = True
         self.mouse_mov_buff = (0, 0)
-        self.mouse_up_scroll = False
-        self.mouse_down_scroll = False
+        self.mouse_scroll_val = 0
 
     def handle_key_input(self, events: list):
         global game_state
-        global cell_size
-        global cell_image
-        self.mouse_up_scroll = False
-        self.mouse_down_scroll = False
+        self.mouse_scroll_val = 0
         for event in events:
             #checks quit event for proper exit
             if event.type == pg.QUIT:
@@ -75,14 +71,8 @@ class InputHandler():
             
             #detect mouse scroll and changes zoom level
             if event.type == pg.MOUSEWHEEL:
-                new_cell_size = (cell_size[0] + event.y*2, cell_size[1] + event.y*2) 
-                if new_cell_size[0] <= 0 or new_cell_size[1] <= 0:
-                    new_cell_size = cell_size
-
-                cell_size = new_cell_size
-                #cell_image
-                cell_image = pg.Surface(cell_size)
-                cell_image.fill((255,255,255))     
+                self.mouse_scroll_val = event.y
+                   
 
     def handle_mouse_input(self, mouse_mov: tuple, mouse_events: tuple):
         self.mouse_mov_buff = mouse_mov
@@ -104,6 +94,26 @@ class InputHandler():
                 self.mouse_click = True
                 self.prev_mouse_click = True
 
+def cam_zoom(y):
+    global cell_size
+    global cell_image
+    global camera_pos
+    
+    new_cell_size = (cell_size[0] + y*2, cell_size[1] + y*2)
+    if not (new_cell_size[0] <= 0 or new_cell_size[1] <= 0):
+        #adjusts camera position
+        screen_size = pg.display.get_surface().get_size()
+
+        cell_change_ratio = [1 - new_cell_size[0]/cell_size[0], 1 - new_cell_size[1]/cell_size[1]]
+        camera_center = [camera_pos[0] + screen_size[0]/2, camera_pos[1] + screen_size[1]/2]
+        camera_pos[0] -= cell_change_ratio[0] * camera_center[0]
+        camera_pos[1] -= cell_change_ratio[1] * camera_center[1]
+
+        cell_size = new_cell_size
+    
+    #cell_image resizing
+    cell_image = pg.Surface(cell_size)
+    cell_image.fill((255,255,255))  
 
 
 def cell_draw(coord_list):
@@ -152,6 +162,8 @@ def game_loop(coord_list):
     while True:
         input_handler.handle_key_input(pg.event.get())
         input_handler.handle_mouse_input(pg.mouse.get_rel(), pg.mouse.get_pressed())
+
+        if input_handler.mouse_scroll_val != 0: cam_zoom(input_handler.mouse_scroll_val)
 
         #check if left mouse is pressed        
         if input_handler.mouse_drag:
