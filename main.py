@@ -64,6 +64,7 @@ class InputHandler():
             #checks quit event for proper exit
             if event.type == pg.QUIT:
                 pg.quit()
+                exit()
 
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and self.space_up_switch:
                 game_state = not game_state
